@@ -80,6 +80,8 @@ legend("top", lty=1, lwd=2, legend=c(paste("median = ", md),
                                      paste("mean = ", mn)), 
                                      col = c("red", "blue"))
 ```
+... add beef describing what is shown...
+
 
 ## What is the average daily activity pattern?
 To explore the average daily activity, we want to determine the average number 
@@ -91,7 +93,8 @@ sactivityInterval <-
       dplyr::summarise(gactivityInterval, 
                        averageSteps = mean(steps, na.rm = TRUE))
 sactivityInterval$intervalNumber <- 1:nrow(sactivityInterval)
-plot(sactivityInterval$intervalNumber, sactivityInterval$averageSteps, type = "l")
+plot(sactivityInterval$intervalNumber, sactivityInterval$averageSteps, type = "l",
+     xlab = "5-minute Interval in a Day", ylab = "Average Number of Steps in Interval")
 maxSteps <- max(sactivityInterval$averageSteps)
 maxStepsPeriod <- subset(sactivityInterval, averageSteps == maxSteps)
 print(paste("The 5-minute period with maximum average number of steps is: interval", 
@@ -99,7 +102,18 @@ print(paste("The 5-minute period with maximum average number of steps is: interv
 h <- maxStepsPeriod$interval
 print(paste("It corresponds to the hour: ", 
             hm(paste(trunc(h/100), h%%100, sep = ":"))))
+
+md <- round(median(sactivityInterval$averageSteps), 2)
+mn <- round(mean(sactivityInterval$averageSteps), 2)
+abline(h=md, col = "red")
+abline(h=mn, col="blue")
+title(main="Average Number of Steps Per 5-minute Interval Across All Days")
+legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md), 
+                                     paste("mean = ", mn)), 
+                                     col = c("red", "blue"))
+
 ```
+... add beef describing what is shown...
 
 
 ## Imputing missing values
@@ -122,4 +136,46 @@ And verifying how many of the observations belongs to each of the two categories
 we get the following: 
 ```{r count observations in each of the two categories} 
 table(activity$dayType)
+```
+
+Now, let's plot to compare patterns in weekdays vs weekends. 
+
+```{r} 
+#library(lattice)
+gactivityDaytypeInterval <- group_by(activity, dayType, interval)
+sactivityDaytypeInterval <- dplyr::summarise(gactivityDaytypeInterval, average=mean(steps, na.rm = TRUE))
+sactivityDaytypeInterval$intervalNumber <- rep(1:(nrow(sactivityDaytypeInterval)/2), 2)
+rangey <- range(sactivityDaytypeInterval$average)
+#with(sactivityDaytypeInterval, xyplot(average~intervalNumber|dayType, type = "l"), #layout=c(1,2))
+with(subset(sactivityDaytypeInterval, dayType == "weekday"), plot(intervalNumber, average, type = "l", ylim = rangey))
+mnwd <- round(mean(subset(sactivityDaytypeInterval, dayType=="weekday")$average),2)
+mdwd <- round(median(subset(sactivityDaytypeInterval, dayType=="weekday")$average),2)
+abline(h = mdwd, col="red")
+abline(h = mnwd, col="blue")
+legend("toplef", lty=1, lwd=2, legend=c(paste("median = ", mdwd), 
+                                     paste("mean = ", mnwd)), 
+                                     col = c("red", "blue"))
+```
+
+```{r}
+with(subset(sactivityDaytypeInterval, dayType == "weekend"), plot(intervalNumber, average, type = "l", ylim = rangey))
+mnwe <- round(mean(subset(sactivityDaytypeInterval, dayType=="weekend")$average), 2)
+mdwe <- round(median(subset(sactivityDaytypeInterval, dayType=="weekend")$average), 2)
+abline(h = mdwe, col="red")
+abline(h = mnwe, col="blue")
+legend("topleft", lty=1, lwd=2, legend=c(paste("median = ", mdwe), 
+                                     paste("mean = ", mnwe)), 
+                                     col = c("red", "blue"))
+```
+
+## The previous might not be correct... see readme from specifications...
+## it should be something like the following: 
+```{r} 
+library(lattice)
+gactivityDaytypeInterval <- group_by(activity, dayType, interval)
+sactivityDaytypeInterval <- dplyr::summarise(gactivityDaytypeInterval, average=mean(steps, na.rm = TRUE))
+sactivityDaytypeInterval$intervalNumber <- rep(1:(nrow(sactivityDaytypeInterval)/2), 2)
+#rangey <- range(sactivityDaytypeInterval$average)
+with(sactivityDaytypeInterval, xyplot(average~intervalNumber|dayType, type = "l"), layout=c(1,2))
+
 ```
