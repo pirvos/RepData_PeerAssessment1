@@ -17,7 +17,7 @@ activity <- read.csv("activity.csv")
 
 The following are some initial exploratory operations to better understand the data. 
 
-1. Dimensions of the data are: 
+### Dimensions of the data are: 
 ```{r dimensions of data}
 dimsactivity <- dim(activity)
 print(paste("Number of rows =", dimsactivity[1]))
@@ -50,19 +50,27 @@ library(lubridate)
 activity$wdayNumber <- day(activity$date)
 
 ```
-4. A new column is added to contain a timestamp for each observation. Its values
-are formed from the value of _date_ and the _interval_ columns. The name of the 
-that new column _timeStamp_ and is of type _POSIXct_. The following 
-R code is used. 
-```{r adding timestamp to each observation} 
-activity$timeStamp <- update(as_datetime(activity$date), hour = activity$interval/100, minute = activity$interval%%100)
-```
-The first rows of the processed table are: 
-```{r}
-head(activity)
-```
-## What is mean total number of steps taken per day?
 
+## What is mean total number of steps taken per day?
+```{r}
+library(dplyr)
+gactivityDate <- group_by(activity, date)
+sactivityDate <- dplyr::summarise(gactivityDate, totalSteps = sum(steps, na.rm = TRUE))
+hist(sactivityDate$totalSteps, breaks = 25, col = "gray", 
+     main="Distribution of Total Steps Taken on Each Day", 
+     ylab = "Frequency (Number of days)", xlab = "Total Number of Steps Per Day")
+md <- round(median(sactivityDate$totalSteps), 2)
+mn <- round(mean(sactivityDate$totalSteps), 2)
+abline(v=md, col = "red", lwd=2)
+abline(v=mn, col="blue", lwd=2)
+#title(main="Total Number of Steps Per Day Recorded")
+legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md), 
+                                     paste("mean = ", mn)), 
+                                     col = c("red", "blue"))
+
+```
+
+The following might alse be useful for this analysis. 
 ```{r} 
 library(dplyr)
 gactivityDate <- group_by(activity, date)
@@ -118,7 +126,11 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
 
 ## Imputing missing values
 
-
+What I will do here is, to each 5-minute period with na value, assign the current
+average number
+of steps taken across all days in the data set in which the particular interval 
+is not na. If a particular interval is na for all the days in the data set, then
+it will be assigned a value of 0. .
 
 ## Are there differences in activity patterns between weekdays and weekends?
 Now let's add a new column to the activity data frame. This is a column of type 
