@@ -126,11 +126,29 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
 
 ## Imputing missing values
 
-What I will do here is, to each 5-minute period with na value, assign the current
-average number
+We can use the following loop to count how many rows contain na values for each 
+variable in the data frame.
+```{r}
+nm <- names(activity)
+for(v in 1:length(nm)) { 
+      nmv <- sum(is.na(activity[, v]))  
+      if (nmv > 0) print(paste("Variable", nm[v], "has ", nmv, "missing values."))
+}
+```
+We can see that only variable "steps" has missing values. In total, there are
+2304 missing values of that variable. 
+
+To assign a value to each of those observations having missing value for variable
+steps, what we will do is the following. To each 5-minute period with na value, 
+assign the current average number
 of steps taken across all days in the data set in which the particular interval 
-is not na. If a particular interval is na for all the days in the data set, then
-it will be assigned a value of 0. .
+is not na. However, since there seems to be a clear difference in the activity
+during weekend and week days, for those missing values in weekend days, we will
+use the corresponding average for those days only, and do the anologous to those
+corresponding to weekdays. In those cases (if any) in which all the values are
+missing, we shall assign value 0. 
+
+...
 
 ## Are there differences in activity patterns between weekdays and weekends?
 Now let's add a new column to the activity data frame. This is a column of type 
@@ -152,42 +170,19 @@ table(activity$dayType)
 
 Now, let's plot to compare patterns in weekdays vs weekends. 
 
-```{r} 
-#library(lattice)
-gactivityDaytypeInterval <- group_by(activity, dayType, interval)
-sactivityDaytypeInterval <- dplyr::summarise(gactivityDaytypeInterval, average=mean(steps, na.rm = TRUE))
-sactivityDaytypeInterval$intervalNumber <- rep(1:(nrow(sactivityDaytypeInterval)/2), 2)
-rangey <- range(sactivityDaytypeInterval$average)
-#with(sactivityDaytypeInterval, xyplot(average~intervalNumber|dayType, type = "l"), #layout=c(1,2))
-with(subset(sactivityDaytypeInterval, dayType == "weekday"), plot(intervalNumber, average, type = "l", ylim = rangey))
-mnwd <- round(mean(subset(sactivityDaytypeInterval, dayType=="weekday")$average),2)
-mdwd <- round(median(subset(sactivityDaytypeInterval, dayType=="weekday")$average),2)
-abline(h = mdwd, col="red")
-abline(h = mnwd, col="blue")
-legend("toplef", lty=1, lwd=2, legend=c(paste("median = ", mdwd), 
-                                     paste("mean = ", mnwd)), 
-                                     col = c("red", "blue"))
-```
 
-```{r}
-with(subset(sactivityDaytypeInterval, dayType == "weekend"), plot(intervalNumber, average, type = "l", ylim = rangey))
-mnwe <- round(mean(subset(sactivityDaytypeInterval, dayType=="weekend")$average), 2)
-mdwe <- round(median(subset(sactivityDaytypeInterval, dayType=="weekend")$average), 2)
-abline(h = mdwe, col="red")
-abline(h = mnwe, col="blue")
-legend("topleft", lty=1, lwd=2, legend=c(paste("median = ", mdwe), 
-                                     paste("mean = ", mnwe)), 
-                                     col = c("red", "blue"))
-```
-
-## The previous might not be correct... see readme from specifications...
-## it should be something like the following: 
 ```{r} 
 library(lattice)
+library(dplyr)
 gactivityDaytypeInterval <- group_by(activity, dayType, interval)
 sactivityDaytypeInterval <- dplyr::summarise(gactivityDaytypeInterval, average=mean(steps, na.rm = TRUE))
 sactivityDaytypeInterval$intervalNumber <- rep(1:(nrow(sactivityDaytypeInterval)/2), 2)
 #rangey <- range(sactivityDaytypeInterval$average)
-with(sactivityDaytypeInterval, xyplot(average~intervalNumber|dayType, type = "l"), layout=c(1,2))
+with(sactivityDaytypeInterval, 
+     xyplot(average~intervalNumber|dayType, type = "l",
+            xlab = "5-minute Interval", 
+            ylab = "Average Number of Steps",
+            layout=c(1,2)) 
+     )
 
 ```
