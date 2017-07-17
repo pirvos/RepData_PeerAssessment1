@@ -60,14 +60,14 @@ the median of the total number of steps taken per day are also shown.
 library(dplyr)
 gactivityDate <- group_by(activity, date)
 sactivityDate <- dplyr::summarise(gactivityDate, totalSteps = sum(steps, na.rm = TRUE))
-hist(sactivityDate$totalSteps, col = "gray", 
-     main="Distribution of Total Steps Taken on Each Day", 
-     ylab = "Frequency (Number of days)", xlab = "Total Number of Steps Per Day")
+h <- hist(sactivityDate$totalSteps, plot = FALSE)
+plot(h, main="Distribution of Total Steps Taken on Each Day", 
+     ylim = c(0, max(h$counts)+5), ylab = "Frequency (Number of days)", 
+     xlab = "Total Number of Steps Per Day", col = "gray", labels = TRUE)
 md <- round(median(sactivityDate$totalSteps), 2)
 mn <- round(mean(sactivityDate$totalSteps), 2)
 abline(v=md, col = "red", lwd=2)
 abline(v=mn, col="blue", lwd=2)
-#title(main="Total Number of Steps Per Day Recorded")
 legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md), 
                                      paste("mean = ", mn)), 
                                      col = c("red", "blue"))
@@ -106,6 +106,7 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
                                      col = c("red", "blue"))
 
 ```
+
 ... add beef describing what is shown...
 
 
@@ -166,18 +167,18 @@ library(dplyr)
 gactivityDate <- group_by(activity, date)
 sactivityDate <- dplyr::summarise(gactivityDate, 
                                   totalSteps = sum(steps, na.rm = TRUE))
-hist(sactivityDate$totalSteps, col = "gray", 
-     main="Distribution of Total Steps Taken on Each Day", 
-     ylab = "Frequency (Number of days)", xlab = "Total Number of Steps Per Day")
+h <- hist(sactivityDate$totalSteps, plot = FALSE)
+plot(h, 
+     main="Distribution of Total Steps Taken on Each Day \nAfter Adding Missing Values", 
+     ylim = c(0, max(h$counts)+1), ylab = "Frequency (Number of days)", 
+     xlab = "Total Number of Steps Per Day", col = "gray", labels = TRUE)
 md <- round(median(sactivityDate$totalSteps), 2)
 mn <- round(mean(sactivityDate$totalSteps), 2)
 abline(v=md, col = "red", lwd=2)
 abline(v=mn, col="blue", lwd=2)
-#title(main="Total Number of Steps Per Day Recorded")
 legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md), 
                                      paste("mean = ", mn)), 
                                      col = c("red", "blue"))
-
 ```
 
 
