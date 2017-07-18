@@ -7,30 +7,33 @@ output:
 
 
 ## Loading and preprocessing the data
-The data to be proceesed is originally in file "activity.csv", which is assumed 
+The data to be proceesed is originally in file _activity.csv_, which is assumed
 to be part of the current working directory. The data is read into a dataframe 
-named "activity". For that, the following R code is used: 
+named _activity_. For that, the following R code is used: 
 
 ```{r reading data, echo = TRUE}
 activity <- read.csv("activity.csv")
 ```
 
-The following are some initial exploratory operations to better understand the data. 
+The following are some initial exploratory operations to better understand the 
+data. 
 
-### Dimensions of the data are: 
+Dimensions of the data are: 
 ```{r dimensions of data}
 dimsactivity <- dim(activity)
 print(paste("Number of rows =", dimsactivity[1]))
 print(paste("Number of columns =", dimsactivity[2]))
 ```
-### Number of observations per day are: 
+
+Number of observations per day are: 
 ```{r}
 library(dplyr)
 gactivityDate <- group_by(activity, date)
 dataPerDay <- dplyr::summarise(gactivityDate, count = n())
 nobs <- unique(dataPerDay$count)
 if(length(nobs) == 1) {
-      print(paste("There are ", nobs[1], " observations for each day in the data set."))
+      print(paste("There are ", nobs[1], 
+                  " observations for each day in the data set."))
       n = 24*60/5
       if(nobs[1]==n)
             print("This is exactly the number of 5-minute intervals in 24 hours.")
@@ -42,14 +45,6 @@ if(length(nobs) == 1) {
 }
 ```
 
-### Adding New Column for Day of the Week
-Let's now add a new column with values 1..7, idendifying the day of the week 
-that each registered date corresponds to. The name of the column is _wdayNumber_
-and is of type _integer_.
-```{r adding column for days}
-library(lubridate)
-activity$wdayNumber <- wday(activity$date)   ## 1 Sunday, 2 Monday, ... 7  Sat
-```
 
 ## What is mean total number of steps taken per day?
 The following constructs a histogram of the number of steps taken per day. The
@@ -59,7 +54,8 @@ the median of the total number of steps taken per day are also shown.
 ```{r}
 library(dplyr)
 gactivityDate <- group_by(activity, date)
-sactivityDate <- dplyr::summarise(gactivityDate, totalSteps = sum(steps, na.rm = TRUE))
+sactivityDate <- 
+      dplyr::summarise(gactivityDate, totalSteps = sum(steps, na.rm = TRUE))
 h <- hist(sactivityDate$totalSteps, plot = FALSE)
 plot(h, main="Distribution of Total Steps Taken on Each Day", 
      ylim = c(0, max(h$counts)+5), ylab = "Frequency (Number of days)", 
@@ -111,6 +107,7 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
 The following produces the 5-minute period(s) containing the maximum number of 
 steps. 
 ```{r}
+library(lubridate)
 maxSteps <- max(sactivityInterval$averageSteps)
 maxStepsPeriod <- subset(sactivityInterval, averageSteps == maxSteps)
 print(paste("The 5-minute period with maximum average number of steps is: interval", 
@@ -126,7 +123,8 @@ print(paste("It corresponds to the hour: ",
 ## Imputing missing values
 
 At this stage, we want to estimate and add values to those missing values in the 
-original data set. We can use the following loop to count how many rows contain na values for each 
+original data set. We can use the following loop to count how many rows contain 
+NA values for each 
 variable in the data frame.
 ```{r}
 nm <- names(activity)
@@ -141,15 +139,27 @@ We can see that only variable _steps_ has missing values. In total, there are
 
 To assign a value to each of those observations having missing value for 
 variable _steps_, what we will do is the following. To each 5-minute period with 
-na value for a particular day x, we will assign the current average number
+NA value for a particular day x, we will assign the current average number
 of steps taken across all days in the data set corresponding to the same day of 
 the week as day x and in which the value of _steps_ for the particular interval 
-is not NA. However, since there seems to be a clear difference in the activity
-during weekend and week days, for those missing values in weekend days, we will
-use the corresponding average for weekend days only, and do the anologous to those
-corresponding to weekdays. In those cases (if any) in which all the values are
+is not NA. In those cases (if any) in which all the values are
 missing, we shall assign value 0. 
 
+First, we add a new column with values 1..7, identifying the day of the week 
+that each registered date corresponds to. The name of the new column 
+is _wdayNumber_
+and it is of type _integer_. This is achieved with the following R code: 
+```{r adding column for days}
+library(lubridate)
+activity$wdayNumber <- wday(activity$date)   ## 1 Sunday, 2 Monday, ... 7  Sat
+```
+
+The next R code constructs a temporary data frame containing the estimaded
+values to substitute the NA values as per the previously described strategy. 
+The new data frame's name is _sactivityWDayInterval_, in which 
+column _missingSteps_ contain the estimated value for the 5-minute interval that 
+the particular row corresponds to. The displayed result shows tha no estimated
+value is NA. 
 ```{r}
 gactivityWDayInterval <- group_by(activity, wdayNumber, interval)
 sactivityWDayInterval <- 
@@ -159,17 +169,23 @@ print(paste("Number of NA values in missingSteps is:",
       sum(is.na(sactivityWDayInterval$missingSteps))))
 ```
 
-Now we can add a column to activity containing the computed missing value for
-each period. And then, for those for periods in 
+Note that there is an estimated missing value for every period on each different
+day of the week. That is, there are 288*7=2016 rows in the new data frame. 
+```{r}
+dim(sactivityWDayInterval)
+```
+
+For each row in the _activity_ data frame in
 which the number of steps is NA as per the original data, we assign the missing
-value that was computed. For this, the 
+value that was computed for such period and the particular day of the week 
+that the row corresponds to. For this, the 
 following R code is executed. 
 
 ```{r}
-activity <- merge(activity, sactivityWDayInterval)
-naStepIndexes <- is.na(activity$steps)
-activity[naStepIndexes,]$steps <- activity[naStepIndexes,]$missingSteps
-activity$missingSteps <- NULL
+activity2 <- merge(activity, sactivityWDayInterval)
+naStepIndexes <- is.na(activity2$steps)
+activity[naStepIndexes,]$steps <- activity2[naStepIndexes,]$missingSteps
+#activity$missingSteps <- NULL
 ```
 
 Now, the following code is used to make a histrogram of the total number of steps
@@ -178,7 +194,7 @@ taken per day after adding estimated values for those that were missing.
 
 ```{r}
 library(dplyr)
-gactivityDate <- group_by(activity, date)
+gactivityDate <- group_by(activity2, date)
 sactivityDate <- dplyr::summarise(gactivityDate, 
                                   totalSteps = sum(steps, na.rm = TRUE))
 h <- hist(sactivityDate$totalSteps, plot = FALSE)
@@ -200,28 +216,26 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
 ## Are there differences in activity patterns between weekdays and weekends?
 Now let's add a new column to the activity data frame. This is a column of type 
 factor and two levels: weekend and weekday. It classifies each of the 
-observations in data frame activity depending to the day of the week that its
-date corresponds to. 
+observations in the  _activity_ data frame depending to the day of the week 
+that its date corresponds to. 
 ```{r adding new factor attribute for days: dayType }
 library(lubridate)
-weekendDays <- activity$wdayNumber == 1 | activity$wdayNumber == 7
-activity$dayType <- "weekday"
-activity[weekendDays,]$dayType = "weekend"
-activity$dayType <- as.factor(activity$dayType)
+weekendDays <- activity2$wdayNumber == 1 | activity2$wdayNumber == 7
+activity2$dayType <- "weekday"
+activity2[weekendDays,]$dayType = "weekend"
+activity2$dayType <- as.factor(activity2$dayType)
 ```
 And verifying how many of the observations belongs to each of the two categories, 
 we get the following: 
 ```{r count observations in each of the two categories} 
-table(activity$dayType)
+table(activity2$dayType)
 ```
 
-Now, let's plot to compare patterns in weekdays vs weekends. 
-
-
+To compare patterns in weekdays vs weekends we generate the next plot. 
 ```{r} 
 library(lattice)
 library(dplyr)
-gactivityDaytypeInterval <- group_by(activity, dayType, interval)
+gactivityDaytypeInterval <- group_by(activity2, dayType, interval)
 sactivityDaytypeInterval <- dplyr::summarise(gactivityDaytypeInterval, 
                                              average=mean(steps, 
                                                           na.rm = TRUE))
@@ -231,14 +245,16 @@ sactivityDaytypeInterval$intervalNumber <-
 with(sactivityDaytypeInterval, 
      xyplot(average~intervalNumber|dayType, type = "l", col="black", 
             panel = function(x, y) { 
-                  infText1 <- paste("median =", round(median(y),2))
-                  infText2 <- paste("mean = ", round(mean(y),2))
                   lcolor <- c("red", "blue")
                   panel.xyplot(x, y, type = "l", col = "black")
-                  panel.abline(h=median(y), col="red")
-                  panel.abline(h=mean(y), col = "blue")
-                  panel.text(220, 230, labels=c(infText1, 1),  col=lcolor) 
-                  panel.text(220, 215 , labels=c(infText2, 2),  col="blue") 
+                  panel.abline(h=median(y), col=lcolor[1], lty=2)  ## median
+                  panel.abline(h=mean(y), col = lcolor[2], lty=2)  ## mean
+                  
+                  # adding a legend to each panel
+                  infText1 <- paste("--- median =", round(median(y),2))
+                  infText2 <- paste("--- mean = ", round(mean(y),2))
+                  panel.text(220, 230, labels=c(infText1, 1),  col=lcolor[1]) 
+                  panel.text(220, 215 , labels=c(infText2, 2),  col=lcolor[2]) 
             },
             xlab = "5-minute Interval", 
             ylab = "Average Number of Steps")
