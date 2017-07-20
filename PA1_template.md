@@ -2,10 +2,14 @@
 
 ## Introduction
 This work is aimed to analyze data as established in specifications for Project 1
-in Course 5 of the Data Science track at Coursera. The data used is originally 
-located in file _activity.zip_. The specifications, as well as the data, are
+in Course 5 of the Data Science track at Coursera. The specifications, as well 
+as the data, are
 part of the following github repo: 
-https://github.com/rdpeng/RepData_PeerAssessment1.
+https://github.com/rdpeng/RepData_PeerAssessment1. In that repo, the
+specifications are in 
+file _README.md_, and the data to be analyzed is in file _activity.zip_. The
+data file was downloaded  and decompressed (by "hand") into the current working
+directory.
 
 The general information about the system being used is displayed next. 
 
@@ -40,8 +44,12 @@ Other packages that shall be used are _dplyr_, _lubridate_, and _lattice_.
 Now let's work. 
 
 ## Loading and preprocessing the data
-The data to be proceesed is originally in file _activity.csv_, which is assumed
-to be part of the current working directory. The data is read into a data frame 
+Once the zip file is downloaded and decompressed, we get access to file 
+_activity.csv_, which contains the data to be analyzed. From now on, the 
+analysis to be presented here presumes that file _activity.csv_ is located
+in the current working directory. 
+
+The data in _activity.csv_ is read into a data frame 
 named _activity_. For that, the following R code is used: 
 
 
@@ -130,6 +138,8 @@ histogram panel as lines, as well as values.
 
 ```r
 library(dplyr)
+## determine the total number of steps taken on each day in the data set
+## these totals are saved in data frame sactivityDate
 gactivityDate <- group_by(activity, date)
 sactivityDate <- 
       dplyr::summarise(gactivityDate, totalSteps = sum(steps, na.rm = TRUE))
@@ -170,10 +180,14 @@ in the original data set.
 
 ```r
 library(dplyr)
+## determine the average number of steps taken on each 5-minute interval
+## accross all days in the data set and discarding missing values
+## These averages are computed in data frame sactivityInterval
 gactivityInterval <- group_by(activity, interval)
 sactivityInterval <- 
       dplyr::summarise(gactivityInterval, 
                        averageSteps = mean(steps, na.rm = TRUE))
+## assign index value 1..288 to each 5-minute interval
 sactivityInterval$intervalNumber <- 1:nrow(sactivityInterval)
 plot(sactivityInterval$intervalNumber, sactivityInterval$averageSteps, 
      type = "l", lwd=2, xlab = "5-minute Interval in a Day", 
@@ -192,11 +206,14 @@ legend("topright", lty=1, lwd=2, legend=c(paste("median = ", md),
 
 
 ```r
+## same as previous chunk, but this time the x-axis uses labels corresponding
+## to the values of interval as in the data set, not indexes 1:288 as in that
+## chunk.
 plot(sactivityInterval$interval, sactivityInterval$averageSteps, 
      type = "l", lwd=2, xlab = "5-minute Interval in a Day", 
      ylab = "Average Number of Steps in Interval")
-#md <- round(median(sactivityInterval$averageSteps), 2)
-#mn <- round(mean(sactivityInterval$averageSteps), 2)
+md <- round(median(sactivityInterval$averageSteps), 2)
+mn <- round(mean(sactivityInterval$averageSteps), 2)
 abline(h=md, col = "red")
 abline(h=mn, col="blue")
 title(main="Average Number of Steps Per 5-minute Interval Across All Days")
@@ -286,14 +303,15 @@ for(v in 1:length(nm)) {
 We can see that only variable _steps_ has missing values. In total, there are
 2304 missing values of that variable. 
 
-To assign a value to each of those observations in which the value of the 
+To assign a value to all those observations in which the value of the 
 variable _steps_ is missing, what we will do is the following. 
-To each 5-minute period p for a particular day x in which the value of _steps_ 
+To the 5-minute period p for a particular day x in which the value of _steps_ 
 is 
 NA, we will assign the current average number
 of steps taken across all instances in the data set corresponding to the same 
 day of 
-the week as day x and same period p discarting the NA values. In those cases 
+the week as day x and same period p after discarting the NA values. 
+In those cases 
 (if any) in which all the values are
 missing, we shall assign value 0. 
 
